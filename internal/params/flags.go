@@ -189,6 +189,44 @@ const (
 	LogFileConsoleUsage          = "Saves logs to the specified file path as well as to the console"
 	GitIgnoreFileFilterFlag      = "use-gitignore"
 	GitIgnoreFileFilterUsage     = "Exclude files and directories from the scan based on the patterns defined in the directory's .gitignore file"
+	// AntFilterFlag accepts an ordered, comma-separated list of Apache Ant-style
+	// glob patterns that control which files and directories are included in or
+	// excluded from the scan.
+	//
+	// Ant glob syntax:
+	//   *         any characters within a single path segment
+	//   **        any characters across path separators (recursive)
+	//   ?         exactly one character
+	//   {a,b}     alternation
+	//
+	// Following the Apache Ant patternset convention:
+	//   bare pattern   → INCLUDE entries that match
+	//   ! prefix       → EXCLUDE entries that match
+	//
+	// Default state:
+	//   - Any bare (include) rule present → default is EXCLUDED (opt-in).
+	//   - Only ! (exclude) rules present  → default is INCLUDED (opt-out).
+	//   - No rules                        → everything INCLUDED.
+	//
+	// Rules are evaluated in order; the last matching rule wins.
+	// Patterns without '/' are implicitly matched at any depth ("**/pattern").
+	// Patterns ending in '/' match directories only.
+	// Excluding a directory prunes its sub-tree unless a later include rule
+	// may match a descendant, in which case descent continues with per-entry
+	// evaluation.
+	//
+	// Examples:
+	//   --file-filter-ext "!**/*.test.js"              (exclude test files)
+	//   --file-filter-ext "**/*.java,!**/Test*.java"   (include java, exclude test classes)
+	//   --file-filter-ext "!**/test/**,**/test/fixtures/**" (exclude tests, keep fixtures)
+	AntFilterFlag  = "file-filter-ext"
+	AntFilterUsage = "Ordered Apache Ant-style glob patterns (comma-separated). " +
+		"Bare pattern = INCLUDE; '!' prefix = EXCLUDE. Last matching rule wins. " +
+		"Default: EXCLUDED when any include rule present (opt-in); INCLUDED when only exclude rules (opt-out). " +
+		"Patterns without '/' match at any depth (implicit '**/'). Trailing '/' = directories only. " +
+		"Excluding a directory prunes its sub-tree; a later include rule forces per-child evaluation. " +
+		"Wildcards: * (single segment), ** (any depth), ? (one char), {a,b} (alternation). " +
+		"Examples: \"!**/*.test.js\", \"**/*.java,!**/Test*.java\", \"!**/test/**,**/test/fixtures/**\""
 	// INDIVIDUAL FILTER FLAGS
 	SastFilterFlag  = "sast-filter"
 	SastFilterUsage = "SAST filter"

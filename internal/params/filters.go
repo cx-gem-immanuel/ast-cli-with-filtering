@@ -173,3 +173,14 @@ var KicsBaseFilters = []string{
 var DisabledExclusions = map[string]bool{
 	".git": true,
 }
+
+// GitAlwaysInclude lists the paths inside a .git directory that must always
+// be included in the zip regardless of any user-supplied filters.
+// Paths ending in "/" denote directories whose entire subtree is always
+// included. All other entries inside .git are subject to normal filtering.
+var GitAlwaysInclude = map[string]bool{
+	"HEAD":        true, // current branch pointer
+	"packed-refs": true, // packed references
+	"objects/":    true, // object store directory - include all contents
+	"refs/":       true, // references directory - include all contents
+}

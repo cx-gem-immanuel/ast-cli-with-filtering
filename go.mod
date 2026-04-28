@@ -89,7 +89,7 @@ require (
 	github.com/becheran/wildmatch-go v1.0.0 // indirect
 	github.com/bitnami/go-version v0.0.0-20250324202741-04b9d491e744 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
-	github.com/bmatcuk/doublestar/v4 v4.8.1 // indirect
+	github.com/bmatcuk/doublestar/v4 v4.8.1
 	github.com/bwmarrin/discordgo v0.27.1 // indirect
 	github.com/chai2010/gettext-go v1.0.3 // indirect
 	github.com/charmbracelet/colorprofile v0.2.3-0.20250311203215-f60798e515dc // indirect
