@@ -183,4 +183,5 @@ var GitAlwaysInclude = map[string]bool{
 	"packed-refs": true, // packed references
 	"objects/":    true, // object store directory - include all contents
 	"refs/":       true, // references directory - include all contents
+	"config":      true, // required for repo-URL discovery
 }

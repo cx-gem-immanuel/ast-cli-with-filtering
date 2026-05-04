@@ -83,6 +83,7 @@ The following entries are always written to the zip **unconditionally**, regardl
 | `.git/packed-refs` | Packed references |
 | `.git/objects/` | Object store (entire subtree) |
 | `.git/refs/` | References (entire subtree) |
+| `.git/config` | Remote urls, branches config |
 
 ### Normal Filtering Applied
 
