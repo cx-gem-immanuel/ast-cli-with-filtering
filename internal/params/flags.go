@@ -26,6 +26,7 @@ const (
 	RetryDelayPollingDefault       = 60
 	RetryDelayUsage                = "Time between retries in seconds, use with --" + RetryFlag
 	SourcesFlag                    = "file-source"
+	ExcludeDotGitFlag              = "exclude-dot-git"
 	IgnoredFilePathFlag            = "ignored-file-path"
 	SourcesFlagSh                  = "s"
 	TenantFlag                     = "tenant"

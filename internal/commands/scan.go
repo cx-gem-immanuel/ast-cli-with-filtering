@@ -783,6 +783,9 @@ func scanCreateSubCommand(
 	createScanCmd.PersistentFlags().String(commonParams.ContainerImagesFlag, "", "List of container images to scan, ex: manuelbcd/vulnapp:latest,debian:10")
 	createScanCmd.PersistentFlags().String(commonParams.ScanTypes, "", "Scan types, ex: (sast,iac-security,sca,api-security)")
 
+	createScanCmd.PersistentFlags().Bool(commonParams.ExcludeDotGitFlag, false, "")
+	_ = createScanCmd.PersistentFlags().MarkHidden(commonParams.ExcludeDotGitFlag)
+
 	createScanCmd.PersistentFlags().String(commonParams.TagList, "", "List of tags, ex: (tagA,tagB:val,etc)")
 	createScanCmd.PersistentFlags().StringP(
 		commonParams.BranchFlag, commonParams.BranchFlagSh,
@@ -1606,7 +1609,7 @@ func scanTypeEnabled(scanType string) bool {
 	return false
 }
 
-func compressFolder(sourceDir, filter, userIncludeFilter, scaResolver string, antMatcher filtering.Matcher) (string, error) {
+func compressFolder(sourceDir, filter, userIncludeFilter, scaResolver string, antMatcher filtering.Matcher, excludeDotGit bool) (string, error) {
 	scaToolPath := scaResolver
 	outputFile, err := os.CreateTemp(os.TempDir(), "cx-*.zip")
 	if err != nil {
@@ -1634,7 +1637,7 @@ func compressFolder(sourceDir, filter, userIncludeFilter, scaResolver string, an
 		}
 	} else {
 		// Add directory files normally
-		err = addDirFiles(zipWriter, "", sourceDir, getExcludeFilters(filter), getIncludeFilters(userIncludeFilter), antMatcher)
+		err = addDirFiles(zipWriter, "", sourceDir, getExcludeFilters(filter), getIncludeFilters(userIncludeFilter), antMatcher, excludeDotGit)
 		if err != nil {
 			return "", err
 		}
@@ -1783,7 +1786,7 @@ func addDirFilesIgnoreFilter(zipWriter *zip.Writer, baseDir, parentDir string) e
 	return nil
 }
 
-func addDirFiles(zipWriter *zip.Writer, baseDir, parentDir string, filters, includeFilters []string, antMatcher filtering.Matcher) error {
+func addDirFiles(zipWriter *zip.Writer, baseDir, parentDir string, filters, includeFilters []string, antMatcher filtering.Matcher, excludeDotGit bool) error {
 	fileEntries, err := os.ReadDir(parentDir)
 	if err != nil {
 		return err
@@ -1796,7 +1799,7 @@ func addDirFiles(zipWriter *zip.Writer, baseDir, parentDir string, filters, incl
 		}
 
 		if util.IsDirOrSymLinkToDir(parentDir, fileInfo) {
-			err = handleDir(zipWriter, baseDir, parentDir, filters, includeFilters, fileInfo, antMatcher)
+			err = handleDir(zipWriter, baseDir, parentDir, filters, includeFilters, fileInfo, antMatcher, excludeDotGit)
 		} else {
 			err = handleFile(zipWriter, baseDir, parentDir, filters, includeFilters, fileInfo, antMatcher)
 		}
@@ -1909,7 +1912,7 @@ func addGitDirFiles(
 		} else {
 			// Everything else: apply normal filters.
 			if util.IsDirOrSymLinkToDir(parentDir, fileInfo) {
-				if err = handleDir(zipWriter, baseDir, parentDir, filters, includeFilters, fileInfo, antMatcher); err != nil {
+				if err = handleDir(zipWriter, baseDir, parentDir, filters, includeFilters, fileInfo, antMatcher, false); err != nil {
 					return err
 				}
 			} else {
@@ -1930,11 +1933,16 @@ func handleDir(
 	includeFilters []string,
 	file fs.FileInfo,
 	antMatcher filtering.Matcher,
+	excludeDotGit bool,
 ) error {
 	// .git is a DisabledExclusion: it is always traversed, but only specific
 	// entries are always included. Everything else inside .git is filtered
 	// normally. See commonParams.GitAlwaysInclude for the always-include set.
 	if commonParams.DisabledExclusions[file.Name()] {
+		if excludeDotGit {
+			logger.PrintIfVerbose("Skipping .git directory (--exclude-dot-git)")
+			return nil
+		}
 		logger.PrintIfVerbose("The folder " + file.Name() + " is being traversed (selective git filtering)")
 		newParent, newBase := GetNewParentAndBase(parentDir, file, baseDir)
 		return addGitDirFiles(zipWriter, newBase, newParent, filters, includeFilters, antMatcher)
@@ -1965,7 +1973,7 @@ func handleDir(
 	}
 
 	newParent, newBase := GetNewParentAndBase(parentDir, file, baseDir)
-	return addDirFiles(zipWriter, newBase, newParent, filters, includeFilters, antMatcher)
+	return addDirFiles(zipWriter, newBase, newParent, filters, includeFilters, antMatcher, excludeDotGit)
 }
 
 func isDirFiltered(filename string, filters []string) (bool, error) {
@@ -2096,6 +2104,7 @@ func getUploadURLFromSource(cmd *cobra.Command, uploadsWrapper wrappers.UploadsW
 	containerScanTriggered := strings.Contains(actualScanTypes, commonParams.ContainersType)
 	containerImagesFlag, _ := cmd.Flags().GetString(commonParams.ContainerImagesFlag)
 	containerResolveLocally, _ := cmd.Flags().GetBool(commonParams.ContainerResolveLocallyFlag)
+	excludeDotGit, _ := cmd.Flags().GetBool(commonParams.ExcludeDotGitFlag)
 	scaResolverPath, _ := cmd.Flags().GetString(commonParams.ScaResolverFlag)
 
 	scaResolverParams, scaResolver := getScaResolverFlags(cmd)
@@ -2207,7 +2216,7 @@ func getUploadURLFromSource(cmd *cobra.Command, uploadsWrapper wrappers.UploadsW
 			}
 		} else {
 			if !isSbom {
-				zipFilePath, dirPathErr = compressFolder(directoryPath, sourceDirFilter, userIncludeFilter, scaResolver, antMatcher)
+				zipFilePath, dirPathErr = compressFolder(directoryPath, sourceDirFilter, userIncludeFilter, scaResolver, antMatcher, excludeDotGit)
 			}
 
 			// Clean up .checkmarx/containers directory after successful mixed scan (including containers) compression
