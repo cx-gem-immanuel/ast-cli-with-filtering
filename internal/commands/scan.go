@@ -2232,6 +2232,10 @@ func getUploadURLFromSource(cmd *cobra.Command, uploadsWrapper wrappers.UploadsW
 			return "", "", dirPathErr
 		}
 
+		if zipInfo, statErr := os.Stat(zipFilePath); statErr == nil {
+			logger.Print(fmt.Sprintf("Generated zip file size: %.2f MB (%d bytes)", float64(zipInfo.Size())/(1024*1024), zipInfo.Size()))
+		}
+
 		if unzip {
 			dirRemovalErr := cleanTempUnzipDirectory(directoryPath)
 			if dirRemovalErr != nil {
