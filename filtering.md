@@ -21,9 +21,6 @@ A new scan flag that accepts an ordered, comma-separated list of Apache Ant-styl
 | `*` | Any characters within a single path segment |
 | `**` | Any characters across path separators (any depth) |
 | `?` | Exactly one character |
-| `{a,b}` | Alternation — matches either `a` or `b` |
-
-> **Note:** `{a,b}` alternation is provided by the underlying `doublestar` library and is not part of the core Ant specification.
 
 ### Ordering
 
@@ -62,9 +59,6 @@ Exclude all test directories, then re-include fixture data.
 
 # Exclude specific path
 !**/CICD/**
-
-# Exclude test files across all JS/TS variants
-!**/*.{test,spec}.{js,ts,jsx,tsx}
 ```
 
 ---
