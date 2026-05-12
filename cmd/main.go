@@ -191,10 +191,6 @@ func exitListener() {
 }
 
 func signalHandler(signalChanel chan os.Signal) {
-	kicsRunArgs := []string{
-		killCommand,
-		viper.GetString(params.KicsContainerNameKey),
-	}
 	for {
 		s := <-signalChanel
 		switch s {
@@ -205,6 +201,12 @@ func signalHandler(signalChanel chan os.Signal) {
 			}
 			logger.PrintIfVerbose(string(out))
 			if strings.Contains(string(out), viper.GetString(params.KicsContainerNameKey)) {
+				// Case 00277212
+				// Read the kill args inside the SIGTERM case (after the viper map is ready for reads)
+				kicsRunArgs := []string{
+					killCommand,
+					viper.GetString(params.KicsContainerNameKey),
+				}
 				out, err = exec.Command("docker", kicsRunArgs...).CombinedOutput()
 				logger.PrintIfVerbose(string(out))
 				if err != nil {
