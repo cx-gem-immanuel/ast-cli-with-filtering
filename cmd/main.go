@@ -9,6 +9,7 @@ import (
 	"syscall"
 
 	"github.com/checkmarx/ast-cli/internal/commands"
+	"github.com/checkmarx/ast-cli/internal/kicsshutdown"
 	"github.com/checkmarx/ast-cli/internal/logger"
 	"github.com/checkmarx/ast-cli/internal/params"
 	"github.com/checkmarx/ast-cli/internal/wrappers"
@@ -200,12 +201,13 @@ func signalHandler(signalChanel chan os.Signal) {
 				os.Exit(failureExitCode)
 			}
 			logger.PrintIfVerbose(string(out))
-			if strings.Contains(string(out), viper.GetString(params.KicsContainerNameKey)) {
-				// Case 00277212
-				// Read the kill args inside the SIGTERM case (after the viper map is ready for reads)
+			// Case 00277212
+			// Read the kill args inside the SIGTERM case (after the viper map is ready for reads)
+			kicsContainerName := kicsshutdown.GetKicsContainerName()
+			if kicsContainerName != "" && strings.Contains(string(out), kicsContainerName) {
 				kicsRunArgs := []string{
 					killCommand,
-					viper.GetString(params.KicsContainerNameKey),
+					kicsContainerName,
 				}
 				out, err = exec.Command("docker", kicsRunArgs...).CombinedOutput()
 				logger.PrintIfVerbose(string(out))
