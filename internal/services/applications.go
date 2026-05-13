@@ -79,6 +79,17 @@ func findApplicationAndUpdate(applicationName string, applicationsWrapper wrappe
 		return errors.Errorf("%s: %s", errorConstants.ApplicationNotFound, applicationName)
 	}
 
+	// Case 00277470
+	// If a project is already associated with this application, log the message and skip that specific association.
+	// This applies to ANY type of project:application association (including direct, rule-based etc)
+	applicationProjectIds := applicationResp.ProjectIds
+	for _, id := range applicationProjectIds {
+		if id == projectID {
+			logger.PrintfIfVerbose("Application [%s] : Project [%s] already associated. Skipping explicit re-association...", applicationName, projectName)
+			return nil
+		}
+	}
+
 	isEnabled, err := checkDirectAssociationEnabled(featureFlagsWrapper, tenantWrapper)
 	if err != nil {
 		return errors.Wrap(err, "error while checking if direct association is enabled")
@@ -140,6 +151,9 @@ func updateApplication(applicationModel *wrappers.ApplicationConfiguration, appl
 }
 
 func associateProjectToApplication(applicationID, projectID string, associatedProjectIds []string, applicationsWrapper wrappers.ApplicationsWrapper) error {
+	// FIXME:
+	// This check is now redundant because of the project:application association existance check
+	// in findApplicationAndUpdate() - which is executed before this function is called.
 	for _, id := range associatedProjectIds {
 		if id == projectID {
 			logger.PrintfIfVerbose("Project is already associated with the application. Skipping association")

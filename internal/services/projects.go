@@ -219,7 +219,15 @@ func updateProject(project *wrappers.ProjectResponseModel,
 	projModel.Name = projModelResp.Name
 	projModel.Groups = projModelResp.Groups
 	projModel.Tags = projModelResp.Tags
-	projModel.ApplicationIds = projModelResp.ApplicationIds
+
+	// NOTE:
+	// Application IDs are NOT a body element for UPDATE ops:
+	// 	    Refer to https://checkmarx.stoplight.io/docs/checkmarx-one-api-reference-guide/ziufz1qo5j6tk-update-a-project
+	// Case 00277470: Project:application mapping is done elsewhere (in findApplicationAndUpdate()).
+	// Setting the project:application mapping here has incorrect and undesired side-effects,
+	// such as being unable to update a project associated with an application that has application-level query overrides.
+	// projModel.ApplicationIds = projModelResp.ApplicationIds
+
 	if projectTags != "" {
 		logger.PrintIfVerbose("Updating project tags")
 		projModel.Tags = createTagMap(projectTags)
